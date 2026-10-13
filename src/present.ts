@@ -86,7 +86,7 @@ import { emptyPreview, type Alert as Notice, type HitBox, type Legend, type Line
 import { blockers as blockersOf, streetAdvice, type InTown, type Served, type Street } from "./rules/explain.ts"
 import { breadBonus, streetTax, suppliedTaxOf } from "./rules/households.ts"
 import { ticks } from "./content.ts"
-import { crewTitles } from "./labels.ts"
+import { crewTitles, statusTitles, ruinTitles } from "./labels.ts"
 
 const cellAt = (at: Point): Point => {
   return { x: Math.floor(at.x), y: Math.floor(at.y) }
@@ -797,7 +797,7 @@ export const Interact = Game.System(
           : row.data.sick.present
             ? [{ icon: "health", label: "患病", value: "容量减半", tone: "bad", note: "一分钟后或医生到访时康复；期间可能传染给两格内住宅" } as Line]
             : []),
-        { icon: "people", label: "居民", value: `${h.residents} / ${cap} (${tier.residents} 人上限）`, tone: whyFewer ? "warn" : "ok", note: whyFewer },
+        { icon: "people", label: "居民", value: `${h.residents} / ${cap}（${tier.residents} 人上限）`, tone: whyFewer ? "warn" : "ok", note: whyFewer },
         ...tier.needs.map((n): Line => {
           const why = blockersOf({ ...h, tier: h.tier }, street, town, served, r).find((b) => b.what === n)
           return { icon: needIcons[n], label: needTitle[n], value: met(h, n) ? "已满足" : "未满足", tone: met(h, n) ? "ok" : "bad", note: met(h, n) ? undefined : why?.text }
@@ -846,13 +846,13 @@ export const Interact = Game.System(
     const hoveredRuin = hovered !== null ? ruins.find((row) => row.entity.id === hovered) : undefined
     if (hoveredBuilding) {
       const { kind, status, problem } = describeBuilding(hoveredBuilding)
-      preview.tooltip = `${kind.title.toLowerCase()} · ${problem ?? status}`
+      preview.tooltip = `${kind.title.toLowerCase()} · ${problem ?? statusTitles[status]}`
     } else if (hoveredHouse) {
       const h = hoveredHouse.data.house.get()
       const t = hoveredHouse.data.tile.get()
       preview.tooltip = `${tierHome[h.tier]} · ${h.residents} 位居民 · 宜居度 ${appealAt(cells, t.x, t.y)}${hoveredHouse.data.burning.present ? " · 起火！" : hoveredHouse.data.sick.present ? " · 患病" : ""}`
     } else if (hoveredRuin) {
-      preview.tooltip = `废墟 · ${hoveredRuin.data.ruin.get().cause} · 拆除以清理`
+      preview.tooltip = `废墟 · ${ruinTitles[hoveredRuin.data.ruin.get().cause]} · 拆除以清理`
     } else if (hovered !== null && ui.tool === "select" && parkRows.some((row) => row.entity.id === hovered)) {
       const row = parkRows.find((r) => r.entity.id === hovered)!
       const p = parkOf(row.data.tile.get())

@@ -19,6 +19,8 @@ declare global {
 const executable=process.env.BROWSER_EXECUTABLE_PATH??["/Applications/Brave Browser.app/Contents/MacOS/Brave Browser","/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"].find(existsSync)
 const browser=await chromium.launch({headless:true,...(executable?{executablePath:executable}:{})})
 const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1})
+// Software-rendered cloud browsers may need longer to draw populated towns.
+page.setDefaultTimeout(Number(process.env.GAME_TIMEOUT_MS ?? 30_000))
 const errors:Array<string>=[]
 page.on("pageerror",e=>errors.push(e.message))
 page.on("console",m=>{if(m.type()==="error")errors.push(m.text())})
@@ -42,6 +44,10 @@ const capture=async(name:string)=>{
 try {
   await page.goto(process.env.GAME_BASE_URL??"http://127.0.0.1:5232")
   await page.waitForFunction(()=>window.town)
+  const renderScale=Number(process.env.GAME_RENDER_SCALE ?? 1)
+  assert.ok(Number.isFinite(renderScale)&&renderScale>0&&renderScale<=2,"GAME_RENDER_SCALE must be in (0, 2]")
+  await page.evaluate(scale=>window.town.view.renderer.setPixelRatio(scale),renderScale)
+  facts.renderScale=renderScale
   assert.equal(await page.locator("html").getAttribute("lang"),"zh-CN")
   assert.match(await page.title(),/墨线小镇/)
   await page.getByRole("heading",{name:"建立城镇",exact:true}).waitFor({state:"visible"})

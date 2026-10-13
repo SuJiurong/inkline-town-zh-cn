@@ -1,5 +1,5 @@
 html, body { margin: 0; height: 100%; overflow: hidden; background: #f0f2ec; touch-action: none; }
-body { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", monospace; color: #3d4943; -webkit-user-select: none; user-select: none; }
+body { font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif; color: #3d4943; -webkit-user-select: none; user-select: none; }
 #app { position: fixed; inset: 0; }
 #app canvas { display: block; }
 #app .world-canvas { width:100%; height:100%; touch-action:none; outline:none; }
@@ -338,3 +338,20 @@ body { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, "PingFang 
 .hud .ticker .cell span { flex: 1; }
 .hud .cell.jobs { cursor: pointer; }
 .hud .cell.jobs:hover { background: #eef0ea; }
+
+/* Chinese text uses system CJK fonts; numbers remain aligned without remote fonts. */
+body { font-variant-numeric: tabular-nums; }
+.panel .sub, .panel .empty, .panel .note, .panel .blurb, .sheet .sub,
+.legend small, .tooltip, .toast { line-height: 1.55; overflow-wrap: anywhere; }
+.panel .row { gap: 8px; }
+.panel .row .label { min-width: 0; }
+.panel .row .count, .hud .count { flex-shrink: 0; }
+.hud .request .cell, .hud .alarm .cell { white-space: normal; overflow-wrap: anywhere; }
+.hud .ticker .cell kbd { white-space: nowrap; flex-shrink: 0; }
+.tooltip { max-width: min(360px, calc(100vw - 32px)); white-space: pre-wrap; box-sizing: border-box; }
+@media (max-width: 760px) {
+  .hud .ticker { max-width: 100%; max-height: 22vh; overflow-y: auto; }
+  .panel-open .views, .panel-open .legend { right: 10px; }
+  .sheet .actions { flex-wrap: wrap; }
+  .hud .card .cell { gap: 6px; padding: 6px 8px; }
+}

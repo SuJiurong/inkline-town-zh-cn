@@ -1,5 +1,8 @@
 # Developing Inkline Town
 
+中文界面验证：先启动开发服务器，再运行 `BROWSER_EXECUTABLE_PATH=/usr/bin/chromium pnpm exec node scripts/check-localization.ts`，检查 1440／390／320 像素视口。
+云端软件渲染较慢时，完整交互检查可使用 `GAME_TIMEOUT_MS=120000 GAME_RENDER_SCALE=0.25 pnpm check:browser`；默认画质不变，低像素比检查不能代替正常画质的视觉验收。
+
 [← back to the README](README.md)
 
 Inkline Town is a TypeScript game. The simulation runs on the

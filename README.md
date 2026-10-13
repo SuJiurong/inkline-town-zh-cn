@@ -1,151 +1,85 @@
-# Inkline Town
+# 墨线小镇 · Inkline Town
 
-**墨线小镇 · 简体中文版**
+**一座用墨线勾勒、可以一口气玩完的小镇。** 你将担任一届市长，任期为 45、60 或 90 分钟。铺路、安置移民、建立衣食供应链，在任期结束前建成繁荣的城镇；也可能因破产、暴动、人口流失或王室罢免而提前下台。
 
-这是一款在浏览器中运行的城镇建设游戏。你将担任一届市长，修路、建房、规划产业链，
-为居民提供食物与服务，并在任期结束前完成建设目标。
-游戏主界面、建城设置、资源与建筑说明、政策、事件提示和结算界面默认使用简体中文。
-内部标识与存档格式保持兼容；旧存档中已经记录的历史事件仍保留原文。
-模型预览与美术开发页面暂时保留英文。
+本仓库为简体中文汉化版。游戏界面、建筑与货物说明、升级受阻原因、地图图例、滚动消息、顶栏提示及游玩指南均使用中文。程序标识符、快捷键、存档结构和模拟规则保持不变。旧存档可以继续读取；旧存档中已经记录的英文大事记和存档标题保留原文，新产生的记录使用中文。
 
-[中文玩法说明](docs/how-to-play.zh-CN.md) · [Cloudflare 自动部署](#部署到-cloudflare-workers)
+![第五年末完成建设的城镇：岛上遍布住宅、农场、磨坊和工坊](docs/screenshots/town-complete.webp)
 
-**A town-builder drawn in ink, played in one sitting.** You are the mayor for
-a single term: 45, 60, or 90 minutes. Lay the roads, house the settlers, build
-the chains that feed and clothe them, and grow a busy town of citizens before
-your time runs out. Or watch it go bankrupt, revolt, or empty out.
+这是一个紧凑的城镇建设游戏。建筑、推车与居民以实时生成的三维线条呈现。你可以平移、缩放和旋转岛屿；每张地图都不同，每届任期都有自己的结局和故事。文中的历史截图来自原版，界面文字可能仍为英文。
 
-![A complete town at the end of its fifth year: hundreds of homes, farms, mills, and workshops on a pale island](docs/screenshots/town-complete.webp)
+## 选择地图，开始任期
 
-Inkline Town plays like a small Anno in a small box. Every building, cart, and
-person is drawn live in thin 3D line art. Pan, zoom and rotate the island;
-every map is new, and every
-term ends with a verdict and the story of how you got there.
+建立城镇时，选择地图大小、资源丰度和任期长度。资源丰度影响森林、石料、矿石、湖泊与初始资金。同一种子会生成相同的岛屿。
 
-## A new charter, a new land
+![建城设置：大型、富饶地图和 60 分钟任期，以及岛屿预览](docs/screenshots/charter.webp)
 
-Each town starts with a charter. You choose the size of the land, how rich it
-is in forest, stone, ore, and lakes, and how long your term runs. Every seed
-makes a different island, with a wandering coast and capes reaching out.
+| 地图 | 居民目标 | 金币目标 |
+| --- | ---: | ---: |
+| 小型 | 180 | 2,500 |
+| 中型 | 320 | 4,000 |
+| 大型 | 520 | 5,000 |
 
-![The charter: choosing a large, rich land and a 60-minute term, with a preview of the island](docs/screenshots/charter.webp)
+此外，至少 30% 的居民需要成为市民，支持度至少为 15，最近一分钟的平均收支不能为负。所有目标同时达成并保持两分钟，即可完成建设。
 
-<table>
-  <tr>
-    <td><img src="docs/screenshots/map-small-rich.webp" alt="A small, rich town 25 minutes in: farms, a windmill, and homes around the town hall"></td>
-    <td><img src="docs/screenshots/map-large-harsh.webp" alt="A large, harsh island 50 minutes into a 90-minute term, the town clustered in the middle while the crown asks for tools"></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>small land, rich: farms and mills by year three</sub></td>
-    <td align="center"><sub>large land, harsh: thin woods, little stone, and the crown wants tools</sub></td>
-  </tr>
-</table>
+## 建立供应链，看城镇运转
 
-## Build the chains, watch them work
+伐木场采集木材，锯木厂生产木板；采石场和矿场提供石料与矿石，铁匠铺制造工具。农场种植小麦，磨坊磨成面粉，面包坊烘焙面包。牧羊场提供羊毛，纺织坊生产布料。渔场则负责最初的食物供给。
 
-Lumberjacks fell trees and sawmills cut planks. Quarries and mines dig stone
-and ore for the smithy's tools. Farms grow wheat for the mill and the
-bakery, sheep give wool for the weaver, and fisheries feed the first
-settlers. You never move a crate yourself: carriers push their carts along
-the roads, each loaded with what it carries, and markets send walkers
-through the streets with baskets of fish, bread, and cloth.
+货物由运输员沿道路搬运。市政厅和市场的配送员为沿途住宅送去食物与布料，教堂的传教士提供信仰服务。
 
-![A close look at a busy street: carts of planks and logs, a market walker, residents out walking, the town hall and the chapel](docs/screenshots/street.webp)
+![繁忙的街道：运送木板和木材的推车、市场配送员、居民、市政厅与教堂](docs/screenshots/street.webp)
 
-Settlers need food. Give them bread, cloth, and a chapel's faith, and their
-cottages grow into two-story citizens' homes that hold and pay twice as
-much. Then they come out in long coats and top hats, each household dressed
-in the colour of its roof.
+移民只需食物就能生活；获得面包、布料、信仰和足够的宜居度后，小屋可以升级为市民住宅。最优美、公共服务齐全的街区还能出现富裕市民居住的三层高级住宅。
 
-## A town that looks and works like a real one
+## 规划街区，维护城镇
 
-Every street has a desirability. A smithy or a quarry drags it down for
-several cells around; parks you lay out yourself (lawns, flower beds,
-walks in from the street, lamps, a fountain, a statue), a chapel, and paved streets
-lift it. Citizens will only live on a decent street, and the
-finest streets, with every service calling, grow three-storey townhouses.
-Settlers do the rough work and citizens the skilled, and nobody walks more
-than fifteen road cells to a job, so the far-off mine needs its own
-workers' cottages. Zone the town well and it sorts itself into a fine
-centre, an industrial edge, and cottages by the mill.
+采石场、矿场、铁匠铺等工业建筑会降低附近宜居度。公园、教堂、市场、水域、树林和铺石道路可以改善环境。公园由草坪、花坛、小径、广场及路灯、喷泉、雕像逐格组成。
 
-Then keep it standing. A fire watch, a healer, and a watch house send
-walkers to keep down the risk of fire, sickness, and theft; a sign goes up
-over a home long before disaster, and a fire watch's firefighters race to
-any blaze. Fish and bread rot unless a granary keeps them, tools wear out,
-and a builder's yard has to mend what runs down. Each year's winter is
-mild, normal, or hard, and the almanac tells you which a year ahead. Map
-views show desirability, workers, fire, health, order, and condition across
-the town.
+居民最多沿道路步行 15 格去工作。移民从事基础劳动，市民从事技术工作；移民也能以学徒身份填补技术岗位，效率为四分之三。偏远的矿场需要附近的工人住宅。
 
-## Govern under pressure
+消防站、医馆和治安所派人控制火灾、疾病与盗窃风险；维修工坊负责修缮。鲜鱼和面包会腐坏，粮仓能延长保质期，熏鱼坊则生产耐储存的熏鱼。工具会磨损，建筑会老化。地图视图帮助你查看宜居度、工人、消防、健康、治安与状况。
 
-The bigger the town, the harder it pulls. Winters stop the fields and thin
-the catch. Running the town costs more for every home. Traders pay less the
-more you sell. The crown asks for goods on a deadline, and it remembers when
-you don't deliver. Approval decides how many people each home holds.
+## 在压力下执政
 
-You hold the levers: taxes for settlers and citizens, what to sell or buy and
-how much to keep, which buildings to pause, and when to answer the crown.
+冬季农田停止生长，捕鱼减产，居民消耗食物更快。城镇越大，行政开支越高；货物卖得越多，售价越低。王室定期要求交付货物，逾期会罚款并影响支持度。
 
-<table>
-  <tr>
-    <td><img src="docs/screenshots/ui-town-panel.webp" alt="The town panel: goals, approval and what drives it, the treasury, and tax rates"></td>
-    <td><img src="docs/screenshots/ui-build-menu.webp" alt="The build menu: each building pictured with its cost, workers, and upkeep"></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>the town panel: goals, approval, treasury, taxes, trade</sub></td>
-    <td align="center"><sub>the build menu, unlocking as the town grows</sub></td>
-  </tr>
-</table>
+你可以调整各阶层税率、购买或出售货物、设置保留库存、暂停建筑工作，或交付王室要求。长期重税会积累税怨，临近任期结束才降税不能立刻挽回支持度。
 
-![A mill selected: working, two workers, 261 batches of flour made](docs/screenshots/ui-building.webp)
+![城镇面板：目标、支持度、金库与税率](docs/screenshots/ui-town-panel.webp)
+![建造菜单：建筑费用、工人需求与维护费](docs/screenshots/ui-build-menu.webp)
+![选中的磨坊：运转状态、工人和累计产量](docs/screenshots/ui-building.webp)
 
-## Every term ends
+## 每届任期都有结局
 
-Hold every goal for two minutes (enough people and coins, three in ten of
-them citizens, a town that approves of you) and the town is **complete**.
-Retire, or keep governing to the end. Three minutes in debt, two minutes of
-uproar, a town that empties out, or three of the crown's requests ignored,
-and the term is **lost**. Otherwise time runs out and the town is judged:
-flourishing, holding on, or declining.
+完成建设后可以查看总结，也可以继续执政。连续负债三分钟、支持度连续两分钟不高于 −50、居民大量离开，或连续三次未完成王室要求，都会导致任期失败。若撑到任期结束，城镇会获得“繁荣昌盛”“勉力维持”等评价。
 
-The reckoning shows how it went: residents, coins, and approval across the
-whole term, with the winters shaded, and the chronicle of everything that
-happened.
+总结面板展示整届任期的人口、金币、支持度曲线和大事记，冬季以阴影标记。
 
-<p align="center"><img src="docs/screenshots/reckoning.webp" width="640" alt="The reckoning of a complete town: 581 residents, 352 citizens, 9000 coins, a chart of the term, and its chronicle"></p>
+![任期总结：居民、市民、金币、历史曲线与大事记](docs/screenshots/reckoning.webp)
 
-## Drawn in ink
+## 墨线绘制的世界
 
-There are no sprites or image files: every picture in the game is drawn in
-code with two weights of line on a pale ground. Each building wears the
-colour of what it makes and keeps its work in its yard: a log pile, a silo,
-a pen of sheep, a striped market stall. Trees, rocks, water, and roads are
-different on every cell.
+建筑、人物和自然地形由代码生成，以两种粗细的线条绘制在浅色背景上。建筑的颜色体现其用途，院落中能看到木材、粮仓、羊群与市场摊位。树木、岩石、水域和道路也会随地块变化。
 
-![Every building: town hall, warehouse, lumberjack, forester, quarry, mine, fishery, sawmill, smithy, farm, mill, bakery, sheep farm, weaver, market, chapel](docs/screenshots/sheet-buildings.webp)
+![市政厅、仓库、采集建筑、工坊、市场与教堂](docs/screenshots/sheet-buildings.webp)
+![运送木材、木板、石料、矿石、工具与生活物资的运输员](docs/screenshots/sheet-walkers.webp)
+![配送员、传教士、移民与市民](docs/screenshots/sheet-people.webp)
+![移民小屋与市民住宅](docs/screenshots/sheet-homes.webp)
+![树木、岩石、矿石和逐渐成熟的农田](docs/screenshots/sheet-land.webp)
 
-![Carriers pushing handcarts and barrows, each loaded with its good: logs, planks, stone, ore, tools, fish, wheat, flour, bread, wool, cloth](docs/screenshots/sheet-walkers.webp)
+## 启动游戏
 
-![A market walker with a basket, a chapel walker with a bell, settlers, and citizens in top hats](docs/screenshots/sheet-people.webp)
-
-![Homes for settlers and citizens](docs/screenshots/sheet-homes.webp)
-
-![Trees, rocks and ore, and fields as they ripen](docs/screenshots/sheet-land.webp)
-
-## Play
-
-Inkline Town runs in the browser. Saves stay in your browser, and the town
-autosaves every two minutes of play.
+需要 Node.js 24 或兼容的新版环境，以及 **pnpm 10.17.1**。在仓库目录执行：
 
 ```sh
-pnpm install
-pnpm dev
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev --host 0.0.0.0 --port 5232
 ```
 
-Then open the address it prints. New to the game? [How to play](docs/how-to-play.md)
-covers the controls, the rules of a term, and how the town works underneath.
+打开终端输出的地址。云端环境可通过其端口预览访问 5232。存档保存在当前浏览器中，每两分钟游戏时间自动保存；清除站点数据会删除存档。
+
+首次游玩请阅读[游玩指南](docs/how-to-play.zh-CN.md)。开发与验证命令见[开发说明](DEVELOPMENT.md)。内部的[任期设计](docs/mayor-plan.md)及平衡模型研究保留英文，供开发参考。
 
 ## 部署到 Cloudflare Workers
 
@@ -171,4 +105,4 @@ Cloudflare 会安装依赖并提供部署授权，无需在 GitHub 中手动添�
 
 ---
 
-[How to play](docs/how-to-play.md) · [Developing](DEVELOPMENT.md) · [The design behind the term](docs/mayor-plan.md)
+[中文游玩指南](docs/how-to-play.zh-CN.md) · [开发说明](DEVELOPMENT.md) · [任期设计（英文）](docs/mayor-plan.md)

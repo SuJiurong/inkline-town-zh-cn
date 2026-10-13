@@ -985,7 +985,7 @@ export const createHost = async (mount: HTMLElement, persistence: () => Persiste
     if (p.type === "build") return buildMenu()
     if (p.type === "town") return townPanel()
 
-    const title = p.type === "building" ? kinds[p.kind].title.toLowerCase() : p.type === "house" ? tierHome[p.tier] : p.type === "park" ? "park" : "ruin"
+    const title = p.type === "building" ? kinds[p.kind].title.toLowerCase() : p.type === "house" ? tierHome[p.tier] : p.type === "park" ? "公园" : "废墟"
     const status = el("span", "pill")
     const about = el(
       "p",
@@ -1385,7 +1385,7 @@ export const createHost = async (mount: HTMLElement, persistence: () => Persiste
       request.classList.toggle("show", s.crown.open && s.fate.state === "playing")
       if (s.crown.open) {
         const have = s.stock[s.crown.good]
-        requestText.innerHTML = `${icon("crown", 18)}<span>王室要求 <b>${s.crown.amount}</b> ${goodIcon(s.crown.good, 14)} <b>${goods[s.crown.good].title}</b> <span class="muted">(${have} 库存）</span> · <b>${clockText(s.crown.left)}</b> · +${s.crown.reward} 金币</span>`
+        requestText.innerHTML = `${icon("crown", 18)}<span>王室要求 <b>${s.crown.amount}</b> ${goodIcon(s.crown.good, 14)} <b>${goods[s.crown.good].title}</b> <span class="muted">（库存 ${have}）</span> · <b>${clockText(s.crown.left)}</b> · +${s.crown.reward} 金币</span>`
         send.disabled = have < s.crown.amount
       }
       // What threatens the term, or is about to complete it.
