@@ -137,6 +137,28 @@ pnpm dev
 Then open the address it prints. New to the game? [How to play](docs/how-to-play.md)
 covers the controls, the rules of a term, and how the town works underneath.
 
+## 部署到 Cloudflare Workers
+
+可以直接在 Cloudflare 中授权 GitHub 仓库，自动构建并部署游戏：
+
+1. 在 Cloudflare 的 **Workers & Pages** 中创建应用，选择导入 Git 仓库，授权并选择 `SuJiurong/inkline-town-zh-cn`（或你自己的 fork）。
+2. 选择 **Workers**，生产分支设为 `main`，项目名称设为 `inkline-town-zh-cn`。仓库根目录使用默认值。
+3. 确认以下构建设置，点击部署：
+
+   | 设置 | 值 |
+   | --- | --- |
+   | 构建命令 | `pnpm build` |
+   | 部署命令 | `pnpm exec wrangler deploy` |
+
+Cloudflare 会安装依赖并提供部署授权，无需在 GitHub 中手动添加 API Token。
+完成后打开 Cloudflare 提供的 `workers.dev` 地址即可游玩；以后推送到 `main` 会自动重新部署。
+仓库已固定 Node.js 和 Wrangler 版本，游戏不需要数据库或运行时密钥。
+存档仍保存在玩家浏览器中。
+
+如果使用其他 Worker 名称，请同步修改 `wrangler.jsonc` 中的 `name`，保持它与 Cloudflare 项目名称一致。
+自定义域名可以在部署完成后，从 Worker 的 **Settings → Domains & Routes** 中添加。
+此方式使用仓库根目录的 Wrangler 配置；`deploy/` 是原有的 Alchemy 部署方式。
+
 ---
 
 [How to play](docs/how-to-play.md) · [Developing](DEVELOPMENT.md) · [The design behind the term](docs/mayor-plan.md)

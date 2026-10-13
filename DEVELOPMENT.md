@@ -283,6 +283,29 @@ mends falls down while one by a builder's yard is kept.
 
 ## Releasing to Cloudflare
 
+### Git 自动部署（推荐）
+
+仓库根目录的 `wrangler.jsonc` 将 `pnpm build` 生成的 `dist/` 作为
+Cloudflare Workers 静态资源部署，无需服务端入口或 Alchemy 配置。
+按照 [README 的部署步骤](README.md#部署到-cloudflare-workers)连接 GitHub 仓库，
+在 Workers Builds 中设置构建命令 `pnpm build`、部署命令 `pnpm exec wrangler deploy`。
+Cloudflare 管理部署授权，并在 `main` 更新时自动部署。
+
+本地验证 Cloudflare 配置：
+
+```sh
+pnpm install --frozen-lockfile
+pnpm build
+pnpm exec wrangler deploy --dry-run
+pnpm exec wrangler dev --port 8787
+```
+
+`--dry-run` 只验证打包，不会发布。`wrangler dev` 使用已生成的 `dist/`；
+修改游戏代码后需重新构建。实际在本地发布可运行 `pnpm exec wrangler deploy`，
+并使用自己的 Cloudflare 登录。Git 自动部署无需执行本地发布。
+
+### Alchemy 部署
+
 The game is deployed with [Alchemy](https://alchemy.run/) as a Cloudflare
 Worker serving the Vite build. The separate `deploy/` package keeps its
 dependencies out of the game, and Cloudflare stores the deployment state.
