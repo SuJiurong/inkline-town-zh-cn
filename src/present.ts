@@ -86,6 +86,7 @@ import { emptyPreview, type Alert as Notice, type HitBox, type Legend, type Line
 import { blockers as blockersOf, streetAdvice, type InTown, type Served, type Street } from "./rules/explain.ts"
 import { breadBonus, streetTax, suppliedTaxOf } from "./rules/households.ts"
 import { ticks } from "./content.ts"
+import { crewTitles } from "./labels.ts"
 
 const cellAt = (at: Point): Point => {
   return { x: Math.floor(at.x), y: Math.floor(at.y) }
@@ -119,7 +120,7 @@ const doorsOf = (grid: GridValue, tile: TileLike): DoorSet => {
 /** How far a kind's work reaches, if it works the land around it. */
 const reachOf = (kind: Kind): number | null => kind.gathers?.radius ?? kind.plants?.radius ?? null
 
-const sourceTitle = { tree: "grown trees", stone: "stone", ore: "ore", field: "ripe fields", water: "water" } as const
+const sourceTitle = { tree: "成熟树木", stone: "石料", ore: "矿石", field: "成熟农田", water: "水域" } as const
 
 /** What a building's crew is short of, for its problem line. */
 interface Crewing {
@@ -131,23 +132,23 @@ interface Crewing {
 const problemOf = (kind: Kind, status: StatusValue, growing = false, crewing?: Crewing): string | null => {
   switch (status) {
     case "unconnected":
-      return "needs a road at the middle of one of its sides"
+      return "建筑一侧中央必须连接道路"
     case "unstaffed":
       if (crewing && crewing.nearby === 0)
-        return `no workers nearby: no ${crewing.crew === "citizens" ? "citizens' (or settlers') homes" : "settlers' cottages"} within ${COMMUTE} road cells`
-      return "no workers: every one nearby already has a job"
+        return `附近没有工人：道路距离 ${COMMUTE} 格内没有${crewing.crew === "citizens" ? "市民住宅（或移民小屋）" : "移民小屋"}`
+      return "没有可用工人：附近居民均已就业"
     case "blocked":
-      return "full: nowhere to take what it makes"
+      return "库存已满：产出物资无处运送"
     case "paused":
-      return "paused: no workers, a quarter of its upkeep"
+      return "已暂停：不占用工人，支付四分之一维护费"
     case "starved":
-      if (kind.gathers && growing) return `the ${kind.gathers.source === "tree" ? "trees" : "fields"} in reach are still growing`
+      if (kind.gathers && growing) return `范围内的${kind.gathers.source === "tree" ? "树木" : "农田"}尚未成熟`
       if (kind.gathers)
-        return `no ${sourceTitle[kind.gathers.source]} within ${kind.gathers.radius} cells${kind.gathers.source === "tree" ? ": a forester nearby replants" : ""}`
-      if (kind.recipe?.input) return `waiting for ${kind.recipe.input}`
-      if (kind.service?.service === "goods") return "nothing to hand out: no fish, bread, or cloth here"
-      if (kind.service?.service === "repair") return "no planks to mend with"
-      return "waiting"
+        return `${kind.gathers.radius} 格范围内没有${sourceTitle[kind.gathers.source]}${kind.gathers.source === "tree" ? "：附近林场可补种树木" : ""}`
+      if (kind.recipe?.input) return `等待 ${goods[kind.recipe.input].title}`
+      if (kind.service?.service === "goods") return "没有可配送物资：此处缺少鲜鱼、面包和布料"
+      if (kind.service?.service === "repair") return "缺少维修所需的木板"
+      return "等待中"
     default:
       return null
   }
@@ -230,7 +231,7 @@ const alertOf = (r: { readonly fire: number; readonly health: number; readonly o
 }
 
 /** How a risk reads: "low", "40%", or "high: 85%". */
-const riskText = (value: number) => (value < RISK_MAX * 0.35 ? "ok" : value >= risk.warn ? `high, ${percent(value, RISK_MAX)}` : percent(value, RISK_MAX))
+const riskText = (value: number) => (value < RISK_MAX * 0.35 ? "正常" : value >= risk.warn ? `高，${percent(value, RISK_MAX)}` : percent(value, RISK_MAX))
 
 // ── Map views ─────────────────────────────────────────────────────────────
 
@@ -243,62 +244,62 @@ const meterColor = (value: number, of: number, warn: number) => (value >= warn ?
 
 const legends: Readonly<Record<Exclude<View, "none">, Legend>> = {
   appeal: {
-    title: "desirability",
+    title: "宜居度",
     keys: [
-      { color: 0x2f7a43, label: `${home.tiers[3].appeal}+: townhouses` },
-      { color: GOOD, label: `${home.tiers[2].appeal}+: citizens` },
-      { color: 0xc9d6a0, label: "0 to 4: settlers only" },
-      { color: 0xe0a060, label: "below 0: fewer people, less tax" },
-      { color: BAD, label: `${home.squalid} or less: squalid` }
+      { color: 0x2f7a43, label: `${home.tiers[3].appeal}+：高级住宅` },
+      { color: GOOD, label: `${home.tiers[2].appeal}+：市民` },
+      { color: 0xc9d6a0, label: "0 至 4：仅移民" },
+      { color: 0xe0a060, label: "低于 0：人口与税收减少" },
+      { color: BAD, label: `${home.squalid}及以下：恶劣环境` }
     ],
-    note: "Every point counts: a cottage holds fewer and pays less for each point below 0, and pays more above it. Industry pushes homes away; parks (the more they hold, the further they reach), a chapel, a market, and paved streets draw them in."
+    note: "每一点宜居度都有影响：低于 0 时，小屋容量与税收下降；高于 0 时税收增加。工业降低宜居度；公园、教堂、市场和铺石道路提高宜居度。公园越丰富，影响范围越大。"
   },
   workers: {
-    title: "workers",
+    title: "劳动力",
     keys: [
-      { color: GOOD, label: "fully staffed" },
-      { color: FAIR, label: "short of workers" },
-      { color: BAD, label: "no workers" },
-      { color: 0xd6b48a, label: "settlers' homes" },
-      { color: COOL, label: "citizens' homes" }
+      { color: GOOD, label: "人员齐备" },
+      { color: FAIR, label: "缺少工人" },
+      { color: BAD, label: "没有工人" },
+      { color: 0xd6b48a, label: "移民住宅" },
+      { color: COOL, label: "市民住宅" }
     ],
-    note: `Residents walk at most ${COMMUTE} road cells to work. Select a workplace to see its reach and the homes inside it.`
+    note: `居民最多沿道路步行 ${COMMUTE} 格上班。选择工作场所可查看招工范围与范围内的住宅。`
   },
   fire: {
-    title: "fire",
+    title: "火灾",
     keys: [
-      { color: GOOD, label: "watched" },
-      { color: FAIR, label: "rising" },
-      { color: BAD, label: "at risk, or burning" }
+      { color: GOOD, label: "已巡查" },
+      { color: FAIR, label: "风险上升" },
+      { color: BAD, label: "高风险或起火" }
     ],
-    note: "Buildings take the colour too. A fire watch's watchman resets the risk of every home and workshop along the way; red means past half way, so there is time. Wooden cottages, ovens, forges, and crowding raise it."
+    note: "建筑也会显示风险颜色。消防站巡查员沿街消除住宅与工坊的火灾风险；红色表示风险超过一半，仍有时间处理。木屋、炉灶、锻炉和拥挤都会提高风险。"
   },
   health: {
-    title: "health",
+    title: "健康",
     keys: [
-      { color: GOOD, label: "visited" },
-      { color: FAIR, label: "rising" },
-      { color: BAD, label: "at risk, or sick" }
+      { color: GOOD, label: "已巡诊" },
+      { color: FAIR, label: "风险上升" },
+      { color: BAD, label: "高风险或患病" }
     ],
-    note: "A healer's physician resets the risk and cures the sick. Hunger, crowding, squalor, quarry dust, and still water raise it."
+    note: "医馆的医生消除疾病风险并治疗病患。饥饿、拥挤、环境恶劣、采石粉尘和积水都会增加风险。"
   },
   order: {
-    title: "order",
+    title: "治安",
     keys: [
-      { color: GOOD, label: "kept" },
-      { color: FAIR, label: "rising" },
-      { color: BAD, label: "thieves about" }
+      { color: GOOD, label: "治安良好" },
+      { color: FAIR, label: "风险上升" },
+      { color: BAD, label: "盗贼出没" }
     ],
-    note: "A watch house's constable keeps order. Low approval, squalor, and homes not full raise it; theft first, then the home is left derelict."
+    note: "治安所巡警维护治安。低支持度、环境恶劣及住宅空置会增加风险；先遭盗窃，随后住宅可能被废弃。"
   },
   condition: {
-    title: "condition",
+    title: "状况",
     keys: [
-      { color: GOOD, label: "well kept" },
-      { color: FAIR, label: "needs mending" },
-      { color: BAD, label: "run down: half pace" }
+      { color: GOOD, label: "维护良好" },
+      { color: FAIR, label: "需要维修" },
+      { color: BAD, label: "破败：效率减半" }
     ],
-    note: "A builder's yard mends what its builder passes with planks and stone. At nothing it falls down."
+    note: "维修工坊使用木板与石料修缮沿途建筑。状况降至零时，建筑会倒塌。"
   }
 }
 
@@ -380,15 +381,15 @@ export const Interact = Game.System(
       const upkeep = p.cells.reduce((n, c) => n + grounds[c.ground].upkeep + (c.prop === "none" ? 0 : props[c.prop].upkeep), 0)
       const placed = p.cells.filter((c) => c.prop !== "none").length - p.crowded
       return [
-        { icon: "decor", label: "size", value: `${p.cells.length} cell${p.cells.length === 1 ? "" : "s"} · beauty ${p.beauty}` },
-        { icon: "appeal", label: "made of", value: p.parts.map((part) => `${part.label} ${part.value}`).join(", ") || "nothing yet" },
-        { icon: "homes", label: "the streets around", value: parkText(p), tone: "ok" },
+        { icon: "decor", label: "规模", value: `${p.cells.length} 格 · 美观度 ${p.beauty}` },
+        { icon: "appeal", label: "组成", value: p.parts.map((part) => `${part.label} ${part.value}`).join(", ") || "暂无" },
+        { icon: "homes", label: "周边街道", value: parkText(p), tone: "ok" },
         p.entrances > 0
-          ? { icon: "road", label: "ways in from the street", value: `${p.entrances}${p.entrances > 2 ? " (2 count)" : ""}` }
-          : { icon: "road", label: "ways in from the street", value: "none", tone: "warn", note: "lay a gravel walk or a paved square out to a road: +1.5 each, two count" },
-        { icon: "decor", label: "furnishings that count", value: `${placed} of ${Math.ceil(p.cells.length / 2)}`, tone: p.crowded > 0 ? "warn" : undefined, note: p.crowded > 0 ? `${p.crowded} too many: one counts for every 2 cells, so lay more ground` : undefined },
-        ...(missing.length > 0 ? [{ icon: "info", label: "nicer with", value: missing.join(", "), tone: "dim" } as Line] : []),
-        { icon: "upkeep", label: "upkeep", value: `${Math.round(upkeep * 10) / 10} coins a minute` }
+          ? { icon: "road", label: "街道入口", value: `${p.entrances}${p.entrances > 2 ? "（最多计算两个）" : ""}` }
+          : { icon: "road", label: "街道入口", value: "无", tone: "warn", note: "铺设砂石小径或石铺广场连接道路：每个入口增加 1.5，最多计算两个" },
+        { icon: "decor", label: "有效设施", value: `${placed} / ${Math.ceil(p.cells.length / 2)}`, tone: p.crowded > 0 ? "warn" : undefined, note: p.crowded > 0 ? `${p.crowded} 件设施超出容量：每两格地面可容纳一件，请扩建地面` : undefined },
+        ...(missing.length > 0 ? [{ icon: "info", label: "可增添设施", value: missing.join(", "), tone: "dim" } as Line] : []),
+        { icon: "upkeep", label: "维护费", value: `${Math.round(upkeep * 10) / 10} 金币/分钟` }
       ]
     }
     /** What the pointer is on: the model the camera ray hit, or else (parks have nothing standing to hit) the park on the cell. */
@@ -396,7 +397,7 @@ export const Interact = Game.System(
       const hit = hitAt(hits, at, entity)
       return hit ?? parkAt.get(key(Math.floor(at.x), Math.floor(at.y)))?.entity.id ?? null
     }
-    const parkText = (p: ParkValue) => `desirability ${signed(p.value)} out to ${p.reach} cells`
+    const parkText = (p: ParkValue) => `宜居度 ${signed(p.value)}，作用范围 ${p.reach} 格`
 
     const hits: Array<HitBox> = [
       ...buildings.map(({ entity, data }) => {
@@ -481,8 +482,8 @@ export const Interact = Game.System(
       preview.rangeNote = note
     }
     const rangeOfKind = (tile: TileLike, kind: Kind) => {
-      if (kind.service) rangeFrom(tile, kind.service.range, `its walkers reach ${kind.service.range} road cells from the door`)
-      else if (kind.workers > 0) rangeFrom(tile, COMMUTE + 1, `its workers come from homes within ${COMMUTE} road cells`)
+      if (kind.service) rangeFrom(tile, kind.service.range, `服务人员最多沿道路行走 ${kind.service.range} 格（从门口起）`)
+      else if (kind.workers > 0) rangeFrom(tile, COMMUTE + 1, `工人来自道路距离 ${COMMUTE} 格内的住宅`)
     }
     // Where the page is pointing (from the ticker): outlined for a few seconds.
     if (ui.flash) {
@@ -506,10 +507,10 @@ export const Interact = Game.System(
         else preview.plots.push({ ...c, size: 1, look: "blocked" })
       }
       if (ui.tool === "home" && cell && inside(cell.x, cell.y)) {
-        rangeFrom({ ...(ui.dragFrom ?? cell), size: 1 }, COMMUTE + 1, `residents walk to work within ${COMMUTE} road cells`)
-        preview.tooltip = `homes · ${costText(home.cost)} each · along a road · ${preview.rangeNote ?? "touch a road and residents walk to work within " + COMMUTE + " road cells"}`
+        rangeFrom({ ...(ui.dragFrom ?? cell), size: 1 }, COMMUTE + 1, `居民沿道路通勤最多 ${COMMUTE} 格道路`)
+        preview.tooltip = `住宅 · ${costText(home.cost)} 每栋 · 沿道路建造 · ${preview.rangeNote ?? "连接道路后，居民最多沿道路步行 " + COMMUTE + " 格上班"}`
       }
-      if (ui.tool === "road" && cell) preview.tooltip = `road · ${ROAD_COST} coins a cell · buildings need one at the middle of a side`
+      if (ui.tool === "road" && cell) preview.tooltip = `道路 · 每格花费 ${ROAD_COST} 金币 · 建筑一侧中央必须连接道路`
     } else if (ui.tool === "ground" && cell) {
       const laid: Array<ParkCell> = []
       for (const c of ui.dragFrom ? rectangle(ui.dragFrom, cell) : [cell]) {
@@ -523,7 +524,7 @@ export const Interact = Game.System(
       // What the park it joins gives now, if it joins one.
       const before = laid.map((c) => parkOf(c)).find((p) => p !== undefined)
       const cost = grounds[ui.ground].cost
-      preview.tooltip = `${grounds[ui.ground].title.toLowerCase()} · ${laid.length} cell${laid.length === 1 ? "" : "s"}, ${costText({ coins: cost.coins * laid.length, materials: Object.fromEntries(Object.entries(cost.materials).map(([g, n]) => [g, (n ?? 0) * laid.length])) })}${after ? ` · the park: ${parkText(after)}${before && before.value !== after.value ? ` (now ${signed(before.value)})` : ""}` : ""} · drag a rectangle`
+      preview.tooltip = `${grounds[ui.ground].title.toLowerCase()} · ${laid.length} 格, ${costText({ coins: cost.coins * laid.length, materials: Object.fromEntries(Object.entries(cost.materials).map(([g, n]) => [g, (n ?? 0) * laid.length])) })}${after ? ` · 公园：${parkText(after)}${before && before.value !== after.value ? `（当前 ${signed(before.value)})` : ""}` : ""} · 拖出矩形区域`
       if (after) preview.plots.push(...reachPlots(after))
     } else if (ui.tool === "prop" && cell && inside(cell.x, cell.y)) {
       const there = parkAt.get(key(cell.x, cell.y))?.data.park.get()
@@ -532,11 +533,11 @@ export const Interact = Game.System(
         preview.parks.push(placed)
         const before = parkOf(cell)
         const after = parkOf(cell, [placed])
-        preview.tooltip = `${props[ui.prop].title.toLowerCase()} · ${costText(props[ui.prop].cost)}${after ? ` · the park: ${parkText(after)}${before && before.value !== after.value ? ` (now ${signed(before.value)})` : ""}` : ""}${after && after.crowded > 0 ? " · too crowded: lay more ground for it to count" : ""}`
+        preview.tooltip = `${props[ui.prop].title.toLowerCase()} · ${costText(props[ui.prop].cost)}${after ? ` · 公园：${parkText(after)}${before && before.value !== after.value ? `（当前 ${signed(before.value)})` : ""}` : ""}${after && after.crowded > 0 ? " · 设施过密：扩建地面后才能生效" : ""}`
         if (after) preview.plots.push(...reachPlots(after))
       } else {
         preview.plots.push({ ...cell, size: 1, look: "blocked" })
-        preview.tooltip = `${props[ui.prop].title.toLowerCase()} · lay park ground first`
+        preview.tooltip = `${props[ui.prop].title.toLowerCase()} · 请先铺设公园地面`
       }
     } else if (ui.tool === "place" && ui.placing && pointer) {
       const kind = kinds[ui.placing]
@@ -552,7 +553,7 @@ export const Interact = Game.System(
       if ((preview.hover === null || useAt(grid, cell?.x ?? -1, cell?.y ?? -1) === "park") && cell && ["road", "tree", "field", "park"].includes(useAt(grid, cell.x, cell.y)))
         preview.plots.push({ ...cell, size: 1, look: "blocked" })
       const there = cell ? parkAt.get(key(cell.x, cell.y))?.data.park.get() : undefined
-      if (there) preview.tooltip = there.prop !== "none" ? `remove the ${props[there.prop].title.toLowerCase()}` : `remove the ${grounds[there.ground].title.toLowerCase()}`
+      if (there) preview.tooltip = there.prop !== "none" ? `拆除${props[there.prop].title.toLowerCase()}` : `拆除${grounds[there.ground].title.toLowerCase()}`
     }
     if (ui.selected !== null) {
       const row = buildings.find((b) => b.entity.id === ui.selected)
@@ -615,98 +616,98 @@ export const Interact = Game.System(
         const owed = (Object.entries(site.owed) as Array<[GoodId, number]>).filter(([, n]) => n > 0)
         lines.push(
           owed.length > 0
-            ? { icon: "build", label: "a site", value: "waiting for", goods: owed.map(([good, count]) => ({ good, count })), note: "carriers bring materials from storage; buy what the town lacks in the town panel", tone: "warn" }
-            : { icon: "build", label: "a site", value: "going up", tone: "ok" }
+            ? { icon: "build", label: "建筑工地", value: "等待材料", goods: owed.map(([good, count]) => ({ good, count })), note: "运输员从仓库运来材料；可在城镇面板购买缺少的物资", tone: "warn" }
+            : { icon: "build", label: "建筑工地", value: "正在施工", tone: "ok" }
         )
         return { kind, status, problem: null, lines }
       }
       const staff = row.data.staff.get()
       if (staff.needed > 0) {
         const crew = kind.crew
-        const one = crew === "citizens" ? "citizen" : "settler"
+        const one = crewTitles[crew]
         const short = staff.assigned < staff.needed
         lines.push({
           icon: "workers",
-          label: "workers",
-          value: `${staff.assigned} of ${staff.needed}`,
+          label: "劳动力",
+          value: `${staff.assigned} / ${staff.needed}`,
           tone: !short ? "ok" : staff.assigned > 0 ? "warn" : "bad",
           note: short
             ? staff.nearby === 0
-              ? `no ${crew} live within ${COMMUTE} road cells: lay homes nearer${crew === "citizens" ? ", or settlers stand in as apprentices" : ""}`
-              : `every ${one} nearby already has a job: lay more homes within ${COMMUTE} road cells`
+              ? `道路距离 ${COMMUTE} 格内没有${crewTitles[crew]}：请在附近建造住宅${crew === "citizens" ? "；也可让移民作为学徒代替市民" : ""}`
+              : `附近所有${one}均已就业：请在道路距离 ${COMMUTE} 格内增建住宅`
             : staff.apprentices > 0
-              ? `${staff.apprentices} settler apprentice${staff.apprentices > 1 ? "s" : ""} stand in for citizens, at three-quarters pace`
+              ? `${staff.apprentices} 名移民学徒代替市民工作，效率为 75%`
               : undefined
         })
-        lines.push({ icon: crew, label: `${crew} within ${COMMUTE} road cells`, value: `${staff.nearby}`, tone: "dim" })
+        lines.push({ icon: crew, label: `${COMMUTE} 格道路内的${crewTitles[crew]}`, value: `${staff.nearby}`, tone: "dim" })
       }
       const recipe = maybe(row.data.recipe)
       const inventory = maybe(row.data.inventory)
       if (recipe)
         lines.push({
           icon: recipe.output,
-          label: "makes",
-          value: `${recipe.input ? `${recipe.inputs} ${goods[recipe.input].title} → ` : ""}${recipe.batch} ${goods[recipe.output].title} · a job every ${Math.round(recipe.period / 60)} s`,
-          note: `${recipe.made} made so far${recipe.input ? ` · carriers bring ${goods[recipe.input].title} from whoever makes it, or storage` : ""}`
+          label: "产出",
+          value: `${recipe.input ? `${recipe.inputs} ${goods[recipe.input].title} → ` : ""}${recipe.batch} ${goods[recipe.output].title} · 每次生产耗时 ${Math.round(recipe.period / 60)} 秒`,
+          note: `${recipe.made} 累计产出${recipe.input ? ` · 运输员运来 ${goods[recipe.input].title}（来自生产建筑或仓库）` : ""}`
         })
       if (inventory) {
         const held = inventory.accepts.filter((g) => inventory.stock[g] > 0).map((g) => ({ good: g, count: inventory.stock[g] }))
         const hall = maybe(row.data.hall) !== undefined
         lines.push(
           held.length > 0
-            ? { icon: "jobs", label: "holds", goods: held, note: hall ? `up to ${inventory.cap} of each good; carriers take what sites and workshops ask for, and ${kinds.townhall.carriers} are out at once` : undefined }
-            : { icon: "jobs", label: "holds", value: "nothing yet", tone: "dim" }
+            ? { icon: "jobs", label: "储存", goods: held, note: hall ? `每种物资最多 ${inventory.cap} 件；运输员向工地和工坊运送所需物资，最多同时派出 ${kinds.townhall.carriers} 人` : undefined }
+            : { icon: "jobs", label: "储存", value: "暂无", tone: "dim" }
         )
       }
       if (kind.wear && inventory)
         lines.push(
           inventory.stock.tools > 0
-            ? { icon: "tools", label: "tools", value: `${inventory.stock.tools} on hand`, note: `one wears out every ${kind.wear} jobs; a carrier brings another from storage` }
-            : { icon: "tools", label: "tools", value: "none", tone: "bad", note: "half pace until a carrier brings one: a smithy forges them, or buy them in the town panel" }
+            ? { icon: "tools", label: "工具", value: `${inventory.stock.tools} 现有库存`, note: `每 ${kind.wear} 次生产消耗一件；运输员会从仓库补充` }
+            : { icon: "tools", label: "工具", value: "无", tone: "bad", note: "工具到货前效率减半；可由铁匠铺生产，或在城镇面板购买" }
         )
       const condition = maybe(row.data.condition)
       if (condition)
         lines.push({
           icon: "condition",
-          label: "condition",
+          label: "状况",
           value: percent(condition.value, CONDITION_MAX),
           tone: condition.value < wear.worn ? "bad" : condition.value < wear.mend ? "warn" : "ok",
           note:
             condition.value < wear.worn
-              ? "run down: half pace, and more likely to burn · a builder's yard mends it with a plank and a stone"
+              ? "破败：效率减半且更易起火 · 维修工坊使用木板和石料修缮"
               : condition.value < wear.mend
-                ? "a builder's yard would mend it as its builder passes"
-                : "everything wears; a builder's yard keeps it mended"
+                ? "维修工经过时可修缮此处"
+                : "建筑会逐渐损耗；维修工坊可保持建筑状况"
         })
       const r = maybe(row.data.risk)
       if (r)
         lines.push({
           icon: "fire",
-          label: "fire risk",
+          label: "火灾风险",
           value: riskText(r.fire),
           tone: r.fire >= risk.warn ? "bad" : r.fire >= RISK_MAX * 0.35 ? "warn" : "ok",
-          note: r.fire >= risk.warn ? "a fire watch's watchman resets it as he passes" : kind.hot ? "an oven or a forge: a risk to itself and to homes within 2 cells" : undefined
+          note: r.fire >= risk.warn ? "消防巡查员经过时会消除风险" : kind.hot ? "炉灶或锻炉会增加自身及两格内住宅的火灾风险" : undefined
         })
       const service = maybe(row.data.service)
       const walkers = maybe(row.data.walkers)?.length ?? 0
       if (service)
         lines.push({
           icon: service.service === "goods" ? "trade" : service.service === "faith" ? "faith" : service.service === "repair" ? "repair" : service.service,
-          label: "walkers",
-          value: `${walkers} out · ${service.range} road cells from the door`,
-          note: `one sets out every ${Math.round(service.interval / 60)} s while it is staffed, and serves the homes beside its way`
+          label: "服务人员",
+          value: `${walkers} 人外出 · ${service.range} 格（从门口起）`,
+          note: `每隔 ${Math.round(service.interval / 60)} 秒派出一名服务人员，为沿途住宅提供服务（需有工人）`
         })
       if (kind.appeal)
         lines.push({
           icon: "appeal",
-          label: "desirability around it",
-          value: `${signed(kind.appeal.value)} beside it, fading out to ${kind.appeal.reach} cells`,
+          label: "周边宜居度",
+          value: `${signed(kind.appeal.value)}，随距离衰减，作用范围 ${kind.appeal.reach} 格`,
           tone: kind.appeal.value < 0 ? "warn" : "ok",
-          note: kind.appeal.value < 0 ? "homes this close hold fewer people and pay less; citizens need a street at 5 or more" : undefined
+          note: kind.appeal.value < 0 ? "附近住宅容量与税收下降；市民需要街道宜居度至少为 5" : undefined
         })
-      if (kind.upkeep > 0) lines.push({ icon: "upkeep", label: "upkeep", value: `${kind.upkeep} coins a minute` })
+      if (kind.upkeep > 0) lines.push({ icon: "upkeep", label: "维护费", value: `${kind.upkeep} 金币/分钟` })
       const growing = status === "starved" && growingNear(grid, row.data.tile.get(), kind)
-      const problem = row.data.burning.present ? "on fire!" : problemOf(kind, status, growing, { nearby: staff.nearby, crew: kind.crew })
+      const problem = row.data.burning.present ? "起火！" : problemOf(kind, status, growing, { nearby: staff.nearby, crew: kind.crew })
       return { kind, status, problem, lines }
     }
     /** What the town has of each provision, in storage and on market shelves. */
@@ -742,7 +743,7 @@ export const Interact = Game.System(
     const describeHouse = (row: (typeof houses)[number]) => {
       const h = row.data.house.get()
       const site = maybe(row.data.site)
-      if (site) return { h, lines: [{ icon: "planks", label: "a site", value: "waiting for its plank", tone: "warn" } as Line], blockers: [] as Array<Line> }
+      if (site) return { h, lines: [{ icon: "planks", label: "建筑工地", value: "等待木板到货", tone: "warn" } as Line], blockers: [] as Array<Line> }
       const tile = row.data.tile.get()
       const tier = home.tiers[h.tier]
       const next = h.tier < 3 ? home.tiers[(h.tier + 1) as Tier] : null
@@ -759,79 +760,79 @@ export const Interact = Game.System(
         cap >= tier.residents
           ? undefined
           : row.data.sick.present
-            ? "half as many while it is sick"
+            ? "患病期间容量减半"
             : approval < 0
-              ? "fewer while the town disapproves of its mayor"
+              ? "市长支持度较低，容量减少"
               : desirability < 0
-                ? `fewer on a street at ${signed(desirability)}: ${streetAdvice(street)}`
-                : "fewer until every need is met"
+                ? `街道宜居度较低，容量减少：${signed(desirability)}: ${streetAdvice(street)}`
+                : "需求未全部满足，容量减少"
       const taxLine = (() => {
         const factors: Array<string> = []
         const rate = h.tier === 1 ? rates.settlers : rates.citizens
-        if (rate !== 100) factors.push(`taxed at ${rate}%`)
+        if (rate !== 100) factors.push(`税率 ${rate}%`)
         const st = Math.round((streetTax(desirability) - 1) * 100)
-        if (st !== 0) factors.push(`street ${signed(st)}%`)
-        if (breadBonus(h) > 1) factors.push(`bread on the table +${Math.round(home.breadBonus * 100)}%`)
-        else if (h.tier === 1) factors.push(`+${Math.round(home.breadBonus * 100)}% with bread on the table`)
-        if (h.food <= 0) factors.unshift("hungry: no food, no taxes")
+        if (st !== 0) factors.push(`街道宜居度 ${signed(st)}%`)
+        if (breadBonus(h) > 1) factors.push(`有面包供应 +${Math.round(home.breadBonus * 100)}%`)
+        else if (h.tier === 1) factors.push(`+${Math.round(home.breadBonus * 100)}%（有面包供应）`)
+        if (h.food <= 0) factors.unshift("饥饿：没有食物，不缴税")
         const could = Math.round(suppliedTaxOf(h, rates, undefined, desirability))
         const pays = Math.round(taxOf(h, rates, undefined, desirability))
-        if (could > pays) factors.push(`${could} with every need met`)
-        return { icon: "coins", label: "pays", value: `${pays} coins a minute`, tone: h.food <= 0 ? "bad" : could > pays ? "warn" : "ok", note: factors.join(" · ") || undefined } as Line
+        if (could > pays) factors.push(`${could}（需求全部满足时）`)
+        return { icon: "coins", label: "税收", value: `${pays} 金币/分钟`, tone: h.food <= 0 ? "bad" : could > pays ? "warn" : "ok", note: factors.join(" · ") || undefined } as Line
       })()
       const worst = r ? (["fire", "health", "order"] as const).reduce((a, b) => (r[b] > r[a] ? b : a)) : null
       const riskNote =
         r && worst && r[worst] >= risk.warn
           ? worst === "fire"
-            ? "fire is high: a fire watch's watchman resets it, and firefighters run to a blaze"
+            ? "火灾风险高：消防巡查员可消除风险，消防员会赶往火场灭火"
             : worst === "health"
-              ? "sickness is near: a healer's physician resets it and cures the sick"
-              : "theft is near: a watch house's constable keeps order"
+              ? "疾病风险高：医生可消除风险并治疗病患"
+              : "盗窃风险高：治安所巡警可维护治安"
           : r && worst && r[worst] >= RISK_MAX * 0.35
-            ? "rising slowly: a walker from the matching service resets it as it passes"
+            ? "风险逐渐上升：相应服务人员经过时会消除风险"
             : undefined
       const lines: Array<Line> = [
         ...(row.data.burning.present
-          ? [{ icon: "fire", label: "on fire", value: "everyone has fled", tone: "bad" } as Line]
+          ? [{ icon: "fire", label: "起火", value: "居民已全部逃离", tone: "bad" } as Line]
           : row.data.sick.present
-            ? [{ icon: "health", label: "sick", value: "holds half as many", tone: "bad", note: "it passes in a minute, or when a physician calls; meanwhile it may spread to homes within 2 cells" } as Line]
+            ? [{ icon: "health", label: "患病", value: "容量减半", tone: "bad", note: "一分钟后或医生到访时康复；期间可能传染给两格内住宅" } as Line]
             : []),
-        { icon: "people", label: "residents", value: `${h.residents} of ${cap} (${tier.residents} at most)`, tone: whyFewer ? "warn" : "ok", note: whyFewer },
+        { icon: "people", label: "居民", value: `${h.residents} / ${cap} (${tier.residents} 人上限）`, tone: whyFewer ? "warn" : "ok", note: whyFewer },
         ...tier.needs.map((n): Line => {
           const why = blockersOf({ ...h, tier: h.tier }, street, town, served, r).find((b) => b.what === n)
-          return { icon: needIcons[n], label: needTitle[n], value: met(h, n) ? "met" : "short", tone: met(h, n) ? "ok" : "bad", note: met(h, n) ? undefined : why?.text }
+          return { icon: needIcons[n], label: needTitle[n], value: met(h, n) ? "已满足" : "未满足", tone: met(h, n) ? "ok" : "bad", note: met(h, n) ? undefined : why?.text }
         }),
         ...(h.tier === 1
-          ? [{ icon: "bread", label: "bread", value: met(h, "bread") ? "on the table" : "none lately", tone: met(h, "bread") ? "ok" : "dim", note: met(h, "bread") ? "a cottage with bread pays half again" : "a cottage with bread pays half again: markets hand it out once a bakery bakes it" } as Line]
+          ? [{ icon: "bread", label: "面包", value: met(h, "bread") ? "已有供应" : "近期无供应", tone: met(h, "bread") ? "ok" : "dim", note: met(h, "bread") ? "有面包供应的小屋多缴 50% 税款" : "有面包供应的小屋多缴 50% 税款：面包坊生产后由市场配送" } as Line]
           : []),
         {
           icon: "appeal",
-          label: "street",
-          value: `desirability ${signed(desirability)}`,
+          label: "街道",
+          value: `宜居度 ${signed(desirability)}`,
           tone: desirability >= home.tiers[2].appeal ? "ok" : desirability < 0 ? "warn" : undefined,
-          note: there.parts.length > 0 ? there.parts.slice(0, 5).map((p) => `${p.label} ${signed(p.value)}`).join(", ") : "nothing nearby counts either way: a chapel, a market, a park, or paving would lift it"
+          note: there.parts.length > 0 ? there.parts.slice(0, 5).map((p) => `${p.label} ${signed(p.value)}`).join(", ") : "附近没有影响宜居度的设施；教堂、市场、公园或铺石道路可提高宜居度"
         },
         ...(r
-          ? [{ icon: worst ?? "fire", label: "risks", value: `fire ${riskText(r.fire)} · health ${riskText(r.health)} · order ${riskText(r.order)}${r.thefts > 0 ? " · robbed" : ""}`, tone: worst && r[worst] >= risk.warn ? "bad" : worst && r[worst] >= RISK_MAX * 0.35 ? "warn" : "ok", note: riskNote } as Line]
+          ? [{ icon: worst ?? "fire", label: "风险", value: `火灾 ${riskText(r.fire)} · 健康 ${riskText(r.health)} · 治安 ${riskText(r.order)}${r.thefts > 0 ? " · 遭过盗窃" : ""}`, tone: worst && r[worst] >= risk.warn ? "bad" : worst && r[worst] >= RISK_MAX * 0.35 ? "warn" : "ok", note: riskNote } as Line]
           : []),
         ...(condition
           ? [{
               icon: "condition",
-              label: "condition",
+              label: "状况",
               value: percent(condition.value, CONDITION_MAX),
               tone: condition.value < wear.worn ? "bad" : condition.value < wear.mend ? "warn" : "ok",
-              note: condition.value < wear.worn ? "run down: it drags the street down and may fall · a builder's yard mends it with a plank" : condition.value < wear.mend ? "a builder's yard would mend it as its builder passes" : undefined
+              note: condition.value < wear.worn ? "破败：降低街道宜居度，可能倒塌 · 维修工坊可使用木板修缮" : condition.value < wear.mend ? "维修工经过时可修缮此处" : undefined
             } as Line]
           : []),
         work
-          ? { icon: "jobs", label: "work", value: `${work.title}, ${work.distance} road cells away` }
-          : { icon: "jobs", label: "work", value: `none within ${COMMUTE} road cells`, tone: "dim", note: "residents only work within that walk: a workplace nearer would have them" },
+          ? { icon: "jobs", label: "工作", value: `${work.title}, ${work.distance} 格道路以外` }
+          : { icon: "jobs", label: "工作", value: `没有工作位于 ${COMMUTE} 格道路`, tone: "dim", note: "居民只在此通勤范围内工作：在附近建立工作场所可招募他们" },
         taxLine
       ]
       const blockers: Array<Line> = next
         ? blockersOf(h, street, town, served, r).map((b) => ({
             icon: b.what === "street" ? "appeal" : b.what === "services" ? "order" : needIcons[b.what],
-            label: b.what === "street" ? "street" : b.what === "services" ? "services" : needTitle[b.what],
+            label: b.what === "street" ? "街道" : b.what === "services" ? "服务" : needTitle[b.what],
             value: b.text,
             tone: "bad"
           }))
@@ -849,21 +850,21 @@ export const Interact = Game.System(
     } else if (hoveredHouse) {
       const h = hoveredHouse.data.house.get()
       const t = hoveredHouse.data.tile.get()
-      preview.tooltip = `${tierHome[h.tier]} · ${h.residents} residents · desirability ${appealAt(cells, t.x, t.y)}${hoveredHouse.data.burning.present ? " · on fire!" : hoveredHouse.data.sick.present ? " · sick" : ""}`
+      preview.tooltip = `${tierHome[h.tier]} · ${h.residents} 位居民 · 宜居度 ${appealAt(cells, t.x, t.y)}${hoveredHouse.data.burning.present ? " · 起火！" : hoveredHouse.data.sick.present ? " · 患病" : ""}`
     } else if (hoveredRuin) {
-      preview.tooltip = `ruin · ${hoveredRuin.data.ruin.get().cause} · bulldoze to clear`
+      preview.tooltip = `废墟 · ${hoveredRuin.data.ruin.get().cause} · 拆除以清理`
     } else if (hovered !== null && ui.tool === "select" && parkRows.some((row) => row.entity.id === hovered)) {
       const row = parkRows.find((r) => r.entity.id === hovered)!
       const p = parkOf(row.data.tile.get())
       const here = row.data.park.get()
-      preview.tooltip = `park · ${here.prop !== "none" ? props[here.prop].title.toLowerCase() : grounds[here.ground].title.toLowerCase()}${p ? ` · ${p.cells.length} cells · ${parkText(p)}` : ""}`
+      preview.tooltip = `公园 · ${here.prop !== "none" ? props[here.prop].title.toLowerCase() : grounds[here.ground].title.toLowerCase()}${p ? ` · ${p.cells.length} 格 · ${parkText(p)}` : ""}`
     } else if (ui.tool === "place" && ui.placing) {
       const kind = kinds[ui.placing]
       const r = reachOf(kind)
       const a = kind.appeal
-      preview.tooltip = `${kind.title.toLowerCase()}${r !== null ? ` · works ${r} cells around` : ""}${a ? ` · desirability ${signed(a.value)} out to ${a.reach} cells` : ""}${preview.rangeNote ? ` · ${preview.rangeNote}` : ""} · needs a road at the middle of a side`
-    } else if (ui.tool === "pave") preview.tooltip = `drag along a road to pave it · ${PAVE_COST.coins} coins and a stone a cell · carriers and walkers go half again as fast on it, and homes beside it like it a little`
-    else if (cell && ui.view === "appeal" && inside(cell.x, cell.y)) preview.tooltip = `desirability ${appealAt(cells, cell.x, cell.y)}`
+      preview.tooltip = `${kind.title.toLowerCase()}${r !== null ? ` · 工作范围 ${r} 格` : ""}${a ? ` · 宜居度 ${signed(a.value)}，作用范围 ${a.reach} 格` : ""}${preview.rangeNote ? ` · ${preview.rangeNote}` : ""} · 建筑一侧中央必须连接道路`
+    } else if (ui.tool === "pave") preview.tooltip = `沿道路拖动铺石 · 每格花费 ${PAVE_COST.coins} 金币和一份石料 · 运输与服务人员速度提高 50%，略微改善邻近住宅宜居度`
+    else if (cell && ui.view === "appeal" && inside(cell.x, cell.y)) preview.tooltip = `宜居度 ${appealAt(cells, cell.x, cell.y)}`
     ui.preview = preview
 
     const pickedBuilding = ui.selected !== null ? buildings.find((row) => row.entity.id === ui.selected) : undefined
@@ -906,8 +907,8 @@ export const Interact = Game.System(
         cell: pickedRuin.data.tile.get(),
         cause: r.cause,
         lines: [
-          { icon: "condition", label: "what happened", value: r.cause === "burnt" ? "it burned down" : r.cause === "collapsed" ? "it fell down for want of mending" : "it was left derelict after its thefts", tone: "bad" },
-          { icon: "appeal", label: "the street", value: "desirability −3 around it until it is cleared", tone: "warn", note: "bulldoze it (X) to clear the plot" }
+          { icon: "condition", label: "发生的事件", value: r.cause === "burnt" ? "被大火烧毁" : r.cause === "collapsed" ? "因缺乏维修而倒塌" : "遭盗窃后被废弃", tone: "bad" },
+          { icon: "appeal", label: "街道", value: "清理前，周边宜居度降低 3", tone: "warn", note: "使用拆除工具（X）清理地块" }
         ]
       }
     } else ui.panel = ui.menu ? { type: ui.menu } : null
@@ -1018,9 +1019,9 @@ export const Interact = Game.System(
     const census = resources.census.get()
     const stock = resources.stock.get()
     const burningRow = [...buildings, ...houses].find(({ data }) => data.burning.present)
-    if (census.burning > 0) alerts.push({ text: `${census.burning} on fire`, at: burningRow?.data.tile.get() ?? null, size: burningRow?.data.tile.get().size ?? 1, id: burningRow?.entity.id ?? null })
+    if (census.burning > 0) alerts.push({ text: `${census.burning} 处起火`, at: burningRow?.data.tile.get() ?? null, size: burningRow?.data.tile.get().size ?? 1, id: burningRow?.entity.id ?? null })
     const sickRow = houses.find(({ data }) => data.sick.present)
-    if (census.sick > 0) alerts.push({ text: `${census.sick} home${census.sick > 1 ? "s" : ""} sick`, at: sickRow?.data.tile.get() ?? null, size: 1, id: sickRow?.entity.id ?? null })
+    if (census.sick > 0) alerts.push({ text: `${census.sick} 处住宅 患病`, at: sickRow?.data.tile.get() ?? null, size: 1, id: sickRow?.entity.id ?? null })
     const waiting = new Map<string, { n: number; at: TileLike; id: number }>()
     const remote = new Map<string, { n: number; at: TileLike; id: number }>()
     const shortStaffed: Array<{ id: number; title: string; cell: Point; size: number; assigned: number; needed: number; nobodyNear: boolean }> = []
@@ -1051,19 +1052,19 @@ export const Interact = Game.System(
     for (const id of [...starvedSince.keys()]) if (!seen.has(id)) starvedSince.delete(id)
     const list = (m: Map<string, { n: number }>) => [...m].map(([k, v]) => `${k}${v.n > 1 ? ` ×${v.n}` : ""}`).join(", ")
     const first = (m: Map<string, { at: TileLike; id: number }>) => [...m.values()][0]
-    if (waiting.size > 0) alerts.push({ text: `waiting for inputs: ${list(waiting)}`, at: first(waiting)?.at ?? null, size: first(waiting)?.at.size ?? 1, id: first(waiting)?.id ?? null })
-    if (remote.size > 0) alerts.push({ text: `no workers within ${COMMUTE} road cells: ${list(remote)}`, at: first(remote)?.at ?? null, size: first(remote)?.at.size ?? 1, id: first(remote)?.id ?? null })
+    if (waiting.size > 0) alerts.push({ text: `等待原料：${list(waiting)}`, at: first(waiting)?.at ?? null, size: first(waiting)?.at.size ?? 1, id: first(waiting)?.id ?? null })
+    if (remote.size > 0) alerts.push({ text: `没有工人位于 ${COMMUTE} 格道路范围内：${list(remote)}`, at: first(remote)?.at ?? null, size: first(remote)?.at.size ?? 1, id: first(remote)?.id ?? null })
     const hallRow = buildings.find(({ data }) => data.hall.present)
-    if (census.homes > 0 && larder(stock) === 0) alerts.push({ text: "no food in store: homes go hungry", at: hallRow?.data.tile.get() ?? null, size: hallRow?.data.tile.get().size ?? 1, id: hallRow?.entity.id ?? null })
+    if (census.homes > 0 && larder(stock) === 0) alerts.push({ text: "食物库存为空：居民正在挨饿", at: hallRow?.data.tile.get() ?? null, size: hallRow?.data.tile.get().size ?? 1, id: hallRow?.entity.id ?? null })
     // A town's first steps, until it has taken them: the ticker is otherwise silent when there is least to go on.
     const hallAt = { at: hallRow?.data.tile.get() ?? null, size: hallRow?.data.tile.get().size ?? 1, id: null }
     const standingKinds = new Set(buildings.filter(({ data }) => !data.site.present && !data.rising.present).map(({ data }) => data.building.get().kind))
     const placedKinds = new Set(buildings.map(({ data }) => data.building.get().kind))
     const residents = census.settlers + census.citizens
-    if (census.homes === 0 && houses.length === 0) alerts.push({ text: "first: lay a road out from the town hall (R), then drag a row of homes along it (H); settlers move in on their own", ...hallAt })
-    else if (!placedKinds.has("fishery") && !placedKinds.has("bakery") && residents < 60) alerts.push({ text: "settlers eat: build a fishery (B) within two cells of water, on a road; the town hall's walker hands the fish out", ...hallAt })
-    else if (residents >= 20 && !placedKinds.has("lumberjack") && stock.planks < 20) alerts.push({ text: "planks are running out: a lumberjack by the woods and a sawmill make more; every home and building needs them", ...hallAt })
-    else if (residents >= 40 && !placedKinds.has("market") && standingKinds.has("fishery")) alerts.push({ text: "the town hall's walker only reaches 20 road cells: a market (B) hands out food further along the streets", ...hallAt })
+    if (census.homes === 0 && houses.length === 0) alerts.push({ text: "先从市政厅铺设道路（R），再沿路拖动建造住宅（H）；移民会自动入住", ...hallAt })
+    else if (!placedKinds.has("fishery") && !placedKinds.has("bakery") && residents < 60) alerts.push({ text: "移民需要食物：在距水域两格内、连接道路的位置建造渔场（B）；市政厅配送员会供应鲜鱼", ...hallAt })
+    else if (residents >= 20 && !placedKinds.has("lumberjack") && stock.planks < 20) alerts.push({ text: "木板即将耗尽：在树林旁建造伐木场，并建造锯木厂；所有住宅和建筑都需要木板", ...hallAt })
+    else if (residents >= 40 && !placedKinds.has("market") && standingKinds.has("fishery")) alerts.push({ text: "市政厅配送范围仅为 20 格道路：建造市场（B）可为更远的住宅供应食物", ...hallAt })
 
     const ledger = resources.ledger.get()
     const charter = resources.charter.get()
@@ -1118,13 +1119,13 @@ export const Interact = Game.System(
         approval: mood.approval,
         target: mood.target,
         parts: [
-          { label: "mood of the town", value: mood.base },
-          { label: "needs met", value: mood.needs },
-          { label: "taxes now", value: mood.taxes },
-          { label: "a grudge over taxes past", value: mood.grudge },
-          { label: "unpaid wages", value: mood.debt },
-          { label: "the crown's displeasure", value: mood.crown },
-          { label: "a hungry winter", value: mood.winter }
+          { label: "基础民心", value: mood.base },
+          { label: "需求满足", value: mood.needs },
+          { label: "当前税率", value: mood.taxes },
+          { label: "过往高税率积累的民怨", value: mood.grudge },
+          { label: "拖欠工资", value: mood.debt },
+          { label: "王室不满", value: mood.crown },
+          { label: "冬季饥饿", value: mood.winter }
         ].filter((p) => p.value !== 0)
       },
       crown: {

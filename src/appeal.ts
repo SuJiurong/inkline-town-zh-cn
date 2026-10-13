@@ -57,7 +57,7 @@ export const landSource = (what: "water" | "forest" | "paved" | "ruin" | "worn",
   y: cell.y,
   size: cell.size ?? 1,
   ...rules.appeal[what],
-  label: what === "forest" ? "woods" : what === "paved" ? "paved street" : what === "worn" ? "a run-down home" : what,
+  label: what === "forest" ? "树林" : what === "paved" ? "铺石道路" : what === "worn" ? "破败住宅" : what === "water" ? "水域" : "废墟",
   mode: what === "water" || what === "forest" ? "nature" : what === "paved" ? "paved" : "sum"
 })
 
@@ -159,8 +159,8 @@ export const parkValue = (cells: ReadonlyArray<ParkCell>, road: (x: number, y: n
   const welcome = Math.min(entrances, park.entrances) * park.entrance
   const beauty = ground + welcome + counted.reduce((n, w) => n + w.worth, 0)
   const parts = [
-    { label: groundRaw > ground ? "ground (all it counts for)" : "ground", value: tenth(ground) },
-    { label: `way${Math.min(entrances, park.entrances) === 1 ? "" : "s"} in from the street`, value: welcome },
+    { label: groundRaw > ground ? "地面（贡献上限）" : "地面", value: tenth(ground) },
+    { label: "街道入口", value: welcome },
     ...[...byKind].map(([label, value]) => ({ label, value: tenth(value) }))
   ].filter((p) => p.value > 0)
   return {
@@ -212,7 +212,7 @@ export const parkSources = (cells: ReadonlyArray<ParkCell>, road?: (x: number, y
       const x = Math.min(...xs)
       const y = Math.min(...ys)
       const size = Math.max(Math.max(...xs) - x, Math.max(...ys) - y) + 1
-      return { x, y, size, value: p.value, reach: p.reach, label: "park", mode: "sum", cells: p.cells }
+      return { x, y, size, value: p.value, reach: p.reach, label: "公园", mode: "sum", cells: p.cells }
     })
 
 /** Per-minute upkeep paid for a park cell, including its furnishing. */

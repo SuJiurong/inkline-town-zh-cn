@@ -61,7 +61,7 @@ export const Decay = Game.System(
         write(
           resources.chronicle,
           t,
-          b ? `The ${kinds[b.kind].title.toLowerCase()} on ${placeName(landmarks, tile)} fell down: nobody mended it.` : `A home on ${placeName(landmarks, tile)} fell down: nobody mended it.`,
+          b ? `${placeName(landmarks, tile)}的${kinds[b.kind].title}因无人维修而倒塌。` : `${placeName(landmarks, tile)}的一栋住宅因无人维修而倒塌。`,
           true,
           tile
         )
@@ -103,9 +103,9 @@ export const Decay = Game.System(
           if (data.staff.get().assigned > 0 && (foods as ReadonlyArray<string>).includes(r.output)) made += (r.batch * 3600) / r.period
         }
         const cause = made > p.eaten * 1.5
-          ? `the town makes about ${Math.round(made)} food a minute and eats ${p.eaten}: fewer fisheries, a smokehouse, or selling fish would stop the waste`
-          : `a granary keeps fish and bread five times as long, and smoked fish keeps`
-        write(resources.chronicle, t, `${counted(p.rotted, "fish or loaf", "fish and loaves")} rotted in store this minute: ${cause}.`, true)
+          ? `城镇每分钟生产约 ${Math.round(made)} 份食物，却只消耗 ${p.eaten} 份：减少渔场、建设熏鱼坊或出售鲜鱼可避免浪费`
+          : "粮仓可将鲜鱼和面包的保鲜时间延长至五倍；熏鱼可以长期保存"
+        write(resources.chronicle, t, `${counted(p.rotted, "份鱼或面包")}在本分钟内于仓库腐坏：${cause}。`, true)
       }
       resources.pantry.set({ eaten: 0, rotted: 0, eatenLast: p.eaten, rottedLast: p.rotted, warned: warn ? t : p.warned })
     }

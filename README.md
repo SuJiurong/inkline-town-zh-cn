@@ -1,5 +1,15 @@
 # Inkline Town
 
+**墨线小镇 · 简体中文版**
+
+这是一款在浏览器中运行的城镇建设游戏。你将担任一届市长，修路、建房、规划产业链，
+为居民提供食物与服务，并在任期结束前完成建设目标。
+游戏主界面、建城设置、资源与建筑说明、政策、事件提示和结算界面默认使用简体中文。
+内部标识与存档格式保持兼容；旧存档中已经记录的历史事件仍保留原文。
+模型预览与美术开发页面暂时保留英文。
+
+[中文玩法说明](docs/how-to-play.zh-CN.md) · [Cloudflare 自动部署](#部署到-cloudflare-workers)
+
 **A town-builder drawn in ink, played in one sitting.** You are the mayor for
 a single term: 45, 60, or 90 minutes. Lay the roads, house the settlers, build
 the chains that feed and clothe them, and grow a busy town of citizens before

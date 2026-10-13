@@ -43,17 +43,17 @@ export const Seasons = Game.System(
       write(
         resources.chronicle,
         t,
-        `A ${winters[w].title} winter, year ${now.year}: the fields lie still and fisheries catch ${Math.round(winters[w].fishing * 100)}%${winters[w].heating ? "; homes burn fires to keep warm" : ""}.`
+        `本次为${winters[w].title}，第 ${now.year} 年：农田停止生长，渔场产量为 ${Math.round(winters[w].fishing * 100)}%${winters[w].heating ? "；住宅生火取暖" : ""}。`
       )
     }
-    if (!now.winter && before.winter) write(resources.chronicle, t, `Spring of year ${now.year}.`)
+    if (!now.winter && before.winter) write(resources.chronicle, t, `第 ${now.year} 年春季。`)
     if (!now.winter && now.coming !== null && now.left === WINTER_WARNING) {
       const w = winters[now.coming]
       const eats = resources.pantry.get().eatenLast
       write(
         resources.chronicle,
         t,
-        `Winter in a minute, and the almanac says it will be ${w.title}: ${larder(resources.stock.get())} food in store; the town eats ${eats} a minute.`,
+        `一分钟后入冬，历书记载本次为${w.title}：食物库存 ${larder(resources.stock.get())} 份；城镇每分钟消耗 ${eats} 份。`,
         true
       )
     }
@@ -105,7 +105,7 @@ export const Requests = Game.System(
       const fine = Math.round(((c.reward - crown.bonus) / crown.reward) * crown.fine) + crown.bonus
       resources.treasury.update((tr) => ({ coins: tr.coins - fine }))
       resources.crown.set({ ...c, open: false, missed: c.missed + 1, streak: c.streak + 1, snubs: [...remembered, t] })
-      write(resources.chronicle, t, `The crown's request for ${c.amount} ${goods[c.good].title} went unanswered: a fine of ${fine} coins.`, true)
+      write(resources.chronicle, t, `王室要求的 ${c.amount} ${goods[c.good].title}未按时交付：罚款 ${fine} 金币。`, true)
       return
     }
     if (c.open || t < c.next) return
@@ -133,7 +133,7 @@ export const Requests = Game.System(
     const gap = crownGap(charter, rules)
     const due = t + Math.round(gap * crown.window)
     resources.crown.set({ ...c, snubs: remembered, open: true, good, amount, issued: t, due, reward, next: t + gap })
-    write(resources.chronicle, t, `The crown asks for ${amount} ${goods[good].title} within ${Math.round(((due - t) / 3600) * 10) / 10} minutes, for ${reward} coins.`, true)
+    write(resources.chronicle, t, `王室要求 ${amount} ${goods[good].title}位于 ${Math.round(((due - t) / 3600) * 10) / 10} 分钟内交付，奖励 ${reward} 金币。`, true)
   }
 )
 
@@ -237,15 +237,15 @@ export const Judge = Game.System(
     const score = (won: boolean) => scoreOf({ ...census, coins, approval, met: crownNow.met, missed: crownNow.missed }, won, left)
 
     const next = { ...f, peak: Math.max(f.peak, residents) }
-    for (const mark of [50, 100, 250, 500]) if (f.peak < mark && residents >= mark) note(`${mark} residents.`)
+    for (const mark of [50, 100, 250, 500]) if (f.peak < mark && residents >= mark) note(`${mark} 位居民。`)
 
     // Dangers.
     if (coins < 0) {
-      if (f.debtSince < 0) note("The treasury is empty: wages go unpaid.", true)
+      if (f.debtSince < 0) note("财政已空：工资无法发放。", true)
       next.debtSince = f.debtSince < 0 ? t : f.debtSince
     } else next.debtSince = -1
     if (approval <= fate.revoltAt) {
-      if (f.revoltSince < 0) note("The town is in uproar.", true)
+      if (f.revoltSince < 0) note("城镇发生暴动。", true)
       next.revoltSince = f.revoltSince < 0 ? t : f.revoltSince
     } else next.revoltSince = -1
 
@@ -253,21 +253,21 @@ export const Judge = Game.System(
       note(reason)
       resources.fate.set({ ...next, state, reason, at: t, score: score(state === "won" || f.governing) })
     }
-    if (next.debtSince >= 0 && t - next.debtSince >= minutes(fate.debt)) return end("lost", "Bankrupt: the crown has taken the treasury out of the mayor's hands.")
-    if (next.revoltSince >= 0 && t - next.revoltSince >= minutes(fate.revolt)) return end("lost", "Revolt: the town has turned the mayor out.")
-    if (next.peak >= fate.peak && residents < next.peak * fate.abandon) return end("lost", "Abandoned: the people have left the town.")
-    if (crownNow.streak >= crown.patience) return end("lost", `Dismissed: the crown has replaced a mayor who left ${crown.patience} of its requests unanswered.`)
+    if (next.debtSince >= 0 && t - next.debtSince >= minutes(fate.debt)) return end("lost", "破产：王室已接管市长的财政权。")
+    if (next.revoltSince >= 0 && t - next.revoltSince >= minutes(fate.revolt)) return end("lost", "暴动：居民已将市长驱逐。")
+    if (next.peak >= fate.peak && residents < next.peak * fate.abandon) return end("lost", "废弃：居民已全部离开城镇。")
+    if (crownNow.streak >= crown.patience) return end("lost", `罢免：市长连续忽视王室要求 ${crown.patience} 次，已被王室撤换。`)
     if (t >= termTicks(charter, rules)) {
-      return end("over", f.governing ? "The term is over: the town stood complete to the end." : "The term is over.")
+      return end("over", f.governing ? "任期结束：城镇保持建设目标至任期结束。" : "任期结束。")
     }
 
     // Goals.
     if (!f.governing) {
       const goals = goalsOf(charter, { ...census, coins, net, approval }, rules)
       if (goals.every((g) => g.met)) {
-        if (f.goalSince < 0) note("Every goal is met: the town needs only to hold them.")
+        if (f.goalSince < 0) note("所有目标已达成：城镇只需保持这一状态。")
         next.goalSince = f.goalSince < 0 ? t : f.goalSince
-        if (t - next.goalSince >= minutes(fate.hold)) return end("won", "The town is complete.")
+        if (t - next.goalSince >= minutes(fate.hold)) return end("won", "城镇建设完成。")
       } else next.goalSince = -1
     }
     resources.fate.set(next)
